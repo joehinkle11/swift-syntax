@@ -34,6 +34,11 @@ internal struct RawSyntaxData {
     case materializedToken(MaterializedToken)
     case layout(Layout)
   }
+  
+  internal struct PayloadHash {
+    let hashWithoutTrivia: Int
+    let hash: Int
+  }
 
   /// Token with lazy trivia parsing.
   ///
@@ -71,8 +76,38 @@ internal struct RawSyntaxData {
     var recursiveFlags: RecursiveRawSyntaxFlags
   }
 
-  var payload: Payload
-  var arenaReference: SyntaxArenaRef
+  let payload: Payload
+  let arenaReference: SyntaxArenaRef
+  let payloadHash: PayloadHash
+  
+  init(payload: Payload, arenaReference: SyntaxArenaRef) {
+    self.payload = payload
+    self.arenaReference = arenaReference
+    var hashWithoutTrivia = 0
+    var hash = 0
+    switch payload {
+    case .parsedToken(let dat):
+      hashWithoutTrivia &+= dat.tokenText.hashValue
+      hash &+= dat.wholeText.hashValue
+    case .materializedToken(let dat):
+      for p in dat.leadingTrivia { hash &+= p.hashValue }
+      let datTokenTextHashValue = dat.tokenText.hashValue
+      hashWithoutTrivia &+= datTokenTextHashValue
+      hash &+= datTokenTextHashValue
+      for p in dat.trailingTrivia { hash &+= p.hashValue }
+      break
+    case .layout(let dat):
+      for case let child? in dat.layout {
+        hashWithoutTrivia &+= child.rawData.payloadHash.hashWithoutTrivia
+        hash &+= child.rawData.payloadHash.hash
+      }
+      break
+    }
+    self.payloadHash = PayloadHash(
+      hashWithoutTrivia: hashWithoutTrivia,
+      hash: hash
+    )
+  }
 }
 
 extension RawSyntaxData.ParsedToken {
@@ -278,6 +313,16 @@ extension RawSyntax: TextOutputStreamable, CustomStringConvertible {
     var s = ""
     self.write(to: &s)
     return s
+  }
+  
+  /// O(1) access to a hash of the source text.
+  var sourceHash: Int {
+    self.rawData.payloadHash.hash
+  }
+  
+  /// O(1) access to a hash of the source text ignoring trivia.
+  var sourceHashIgnoringTrivia: Int {
+    self.rawData.payloadHash.hashWithoutTrivia
   }
 }
 

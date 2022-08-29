@@ -427,3 +427,41 @@ public struct SyntaxChildren: BidirectionalCollection {
     self.parent = node
   }
 }
+
+/// Collection that contains both the present child `Syntax` nodes and `nil` entries of the given node.
+public struct AllSyntaxChildren: BidirectionalCollection {
+  public typealias Index = SyntaxChildrenIndex
+  public typealias Element = Syntax?
+
+  /// The underlying collection which contains all children.
+  private var allChildren: RawSyntaxChildren
+
+  /// The parent node of the children. Used to build the `Syntax` nodes.
+  private let parent: Syntax
+
+  public var startIndex: SyntaxChildrenIndex { return allChildren.startIndex }
+  public var endIndex: SyntaxChildrenIndex { return allChildren.endIndex }
+
+  public func index(after index: SyntaxChildrenIndex) -> SyntaxChildrenIndex {
+    return allChildren.index(after: index)
+  }
+
+  public func index(before index: SyntaxChildrenIndex) -> SyntaxChildrenIndex {
+    return allChildren.index(before: index)
+  }
+
+  public subscript(position: SyntaxChildrenIndex) -> Syntax? {
+    let (node, info) = allChildren[position]
+    guard let node = node else {
+      return nil
+    }
+    let absoluteRaw = AbsoluteRawSyntax(raw: node, info: info)
+    let data = SyntaxData(absoluteRaw, parent: parent)
+    return Syntax(data)
+  }
+
+  internal init(_ node: Syntax) {
+    self.allChildren = RawSyntaxChildren(node)
+    self.parent = node
+  }
+}

@@ -388,7 +388,7 @@ extension TriviaPiece {
 /// In contrast to `TriviaPiece`, a `RawTriviaPiece` does not own the source
 /// text of a the trivia.
 @_spi(RawSyntax)
-public enum RawTriviaPiece: Equatable {
+public enum RawTriviaPiece: Equatable, Hashable {
   case spaces(Int)
   case tabs(Int)
   case verticalTabs(Int)

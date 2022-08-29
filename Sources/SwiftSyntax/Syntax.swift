@@ -140,6 +140,11 @@ public extension SyntaxProtocol {
   func children(viewMode: SyntaxTreeViewMode) -> SyntaxChildren {
     return SyntaxChildren(_syntaxNode, viewMode: viewMode)
   }
+    
+  /// A sequence over all children of this node, including both present and `nil` entries.
+  var allChildren: AllSyntaxChildren {
+    return AllSyntaxChildren(_syntaxNode)
+  }
 
   /// The index of this node in a `SyntaxChildren` collection.
   var index: SyntaxChildrenIndex {
@@ -149,6 +154,12 @@ public extension SyntaxProtocol {
   /// Whether or not this node is a token one.
   var isToken: Bool {
     return raw.isToken
+  }
+
+  /// The `SyntaxKind` of this node.
+  @_spi(RawSyntax)
+  var kind: SyntaxKind {
+    return raw.kind
   }
 
   /// Whether or not this node represents an SyntaxCollection.
@@ -467,6 +478,16 @@ public extension SyntaxProtocol {
   /// A source-accurate description of this node.
   var description: String {
     return data.raw.description
+  }
+
+  /// O(1) access to a hash of the source text.
+  var sourceHash: Int {
+    return self.raw.sourceHash
+  }
+
+  /// O(1) access to a hash of the source text ignoring trivia.
+  var sourceHashIgnoringTrivia: Int {
+    return self.raw.sourceHashIgnoringTrivia
   }
 
   /// Prints the raw value of this node to the provided stream.
